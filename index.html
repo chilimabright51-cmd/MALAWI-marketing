@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Malawi Market - Buy & Sell</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui;background:#f0f2f5}
+.top{background:#1877f2;color:#fff;padding:12px 15px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+.logo{font-size:20px;font-weight:800}
+.btn{background:#1877f2;color:#fff;border:0;padding:10px 14px;border-radius:6px;font-weight:700;cursor:pointer}
+.btn-green{background:#42b72a}.btn-white{background:#fff;color:#1877f2;border:1px solid #1877f2}
+.input{width:100%;padding:12px;border:1px solid #ccc;border-radius:6px;margin:6px 0}
+.card{background:#fff;padding:15px;margin:10px;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px}
+.product{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.product img{width:100%;height:150px;object-fit:cover}
+.p-info{padding:10px}.price{color:#42b72a;font-weight:800;font-size:16px}
+.cat{padding:6px 12px;background:#e4e6eb;border-radius:20px;border:0;cursor:pointer}
+.cat.active{background:#1877f2;color:#fff}
+.screen{display:none}.screen.active{display:block}
+</style>
+</head>
+<body>
+
+<div class="top">
+<div class="logo">🇲🇼 Malawi Market</div>
+<div><button class="btn btn-white" onclick="show('home')">🏠 Home</button> <button class="btn" onclick="show('sell')">+ Sell</button></div>
+</div>
+
+<!-- HOME -->
+<div id="home" class="screen active">
+<div class="card">
+<input id="search" class="input" placeholder="🔍 Search products... phone, chair, land..." oninput="render()">
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+<button class="cat active" onclick="filterCat('All',this)">All</button>
+<button class="cat" onclick="filterCat('Phones',this)">Phones</button>
+<button class="cat" onclick="filterCat('Cars',this)">Cars</button>
+<button class="cat" onclick="filterCat('Clothes',this)">Clothes</button>
+<button class="cat" onclick="filterCat('House',this)">House</button>
+<button class="cat" onclick="filterCat('Land',this)">Land</button>
+</div>
+</div>
+<div style="padding:0 10px;display:flex;justify-content:space-between"><b>Products for sale</b><span id="count"></span></div>
+<div id="list" class="grid"></div>
+</div>
+
+<!-- SELL -->
+<div id="sell" class="screen">
+<div class="card">
+<h2>Sell Your Product</h2>
+<input id="p_title" class="input" placeholder="Product Name e.g. iPhone 11">
+<input id="p_price" class="input" type="number" placeholder="Price in MK e.g. 250000">
+<select id="p_cat" class="input"><option>Phones</option><option>Cars</option><option>Clothes</option><option>House</option><option>Land</option><option>Other</option></select>
+<input id="p_loc" class="input" placeholder="Location e.g. Lilongwe, Area 25">
+<input id="p_phone" class="input" placeholder="Your WhatsApp / Phone +265...">
+<textarea id="p_desc" class="input" placeholder="Description"></textarea>
+<input id="p_img" type="file" accept="image/*" class="input">
+<button class="btn btn-green" style="width:100%" onclick="addProduct()">Post Product - Free</button>
+<button class="btn" style="width:100%;background:#e4e6eb;color:#000;margin-top:6px" onclick="show('home')">Cancel</button>
+</div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div id="detail" class="screen">
+<div class="card" id="detailBox"></div>
+</div>
+
+<script>
+let products = JSON.parse(localStorage.getItem('mw_market')||'null') || [
+{id:1,title:"iPhone 12 Pro 128GB",price:450000,cat:"Phones",loc:"Lilongwe, Area 47",phone:"+265991234567",desc:"Clean, battery 89%, with charger",img:"https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500"},
+{id:2,title:"Toyota Corolla 2015",price:8500000,cat:"Cars",loc:"Blantyre, Limbe",phone:"+265881234567",desc:"Automatic, low mileage",img:"https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=500"},
+{id:3,title:"2 Bedroom House for Rent",price:120000,cat:"House",loc:"Mzuzu",phone:"+265991112233",desc:"Water, electricity, tiled",img:"https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=500"},
+{id:4,title:"Men's Jacket - New",price:35000,cat:"Clothes",loc:"Lilongwe, Old Town",phone:"+265991445566",desc:"Size L, black",img:"https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500"},
+];
+let curCat='All';
+
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); window.scrollTo(0,0); }
+function filterCat(c,btn){ curCat=c; document.querySelectorAll('.cat').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); render(); }
+function fmt(n){ return 'MK '+Number(n).toLocaleString(); }
+function render(){
+  let q=document.getElementById('search').value.toLowerCase();
+  let list=products.filter(p=> (curCat==='All'||p.cat===curCat) && p.title.toLowerCase().includes(q));
+  document.getElementById('count').innerText=list.length+' items';
+  document.getElementById('list').innerHTML=list.map(p=>`
+    <div class="product" onclick="viewProduct(${p.id})">
+      <img src="${p.img}">
+      <div class="p-info"><div class="price">${fmt(p.price)}</div><b>${p.title}</b><br><small>${p.loc} • ${p.cat}</small></div>
+    </div>`).join('') || '<p style="grid-column:1/3;text-align:center">No products found</p>';
+}
+function viewProduct(id){
+  let p=products.find(x=>x.id===id);
+  document.getElementById('detailBox').innerHTML=`
+  <img src="${p.img}" style="width:100%;border-radius:8px">
+  <h2>${p.title}</h2><div class="price" style="font-size:22px">${fmt(p.price)}</div>
+  <p>${p.desc}</p><p>📍 ${p.loc} • Category: ${p.cat}</p>
+  <a href="https://wa.me/${p.phone.replace('+','')}" target="_blank"><button class="btn btn-green" style="width:100%">💬 Chat Seller on WhatsApp</button></a>
+  <a href="tel:${p.phone}"><button class="btn" style="width:100%;margin-top:8px">📞 Call Seller ${p.phone}</button></a>
+  <button class="btn" style="width:100%;background:#e4e6eb;color:#000;margin-top:8px" onclick="show('home')">Back</button>
+  `;
+  show('detail');
+}
+function addProduct(){
+  let title=document.getElementById('p_title').value;
+  let price=document.getElementById('p_price').value;
+  let cat=document.getElementById('p_cat').value;
+  let loc=document.getElementById('p_loc').value;
+  let phone=document.getElementById('p_phone').value;
+  let desc=document.getElementById('p_desc').value;
+  if(!title||!price||!phone) return alert('Fill Name, Price and Phone');
+  let file=document.getElementById('p_img').files[0];
+  let reader=new FileReader();
+  reader.onload=function(e){
+    let img=e.target.result || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500';
+    products.unshift({id:Date.now(),title,price,cat,loc,phone,desc,img});
+    localStorage.setItem('mw_market',JSON.stringify(products));
+    alert('Product posted!');
+    show('home'); render();
+  };
+  if(file) reader.readAsDataURL(file); else reader.onload({target:{result:'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500'}});
+}
+render();
+</script>
+</body>
+</html>
